@@ -8,6 +8,30 @@
 
 using namespace std;
 
+char *get_file_content(char *content, int &len)
+{
+  const char pattern[] = {0x0d, 0x0a, 0x0d, 0x0a, 0}; // \r\n\r\n
+  const char end_pattern[] = {0x0d, 0x0a, 0}; // \r\n
+  char *fn = strstr(content, pattern);
+
+  if (fn)
+  {
+    fn = fn + strlen(pattern); // text/plain\r\n\r\n
+#ifdef CGI_DEBUG
+    cout << "sizeof(pattern): " << sizeof(pattern) << endl;
+    cout << "strlen(pattern): " << strlen(pattern) << endl;
+    cout << "xxx fn: " << fn << endl;
+#endif
+    char *end = strstr(fn, end_pattern);
+    len = end - fn;
+    if (end)
+      *end = 0;
+    else
+      return 0;
+  }
+  return fn;
+}
+
 char *get_fn(char *content)
 {
   const char *pattern = "filename=";
@@ -64,6 +88,12 @@ int main(int argc, char *argv[])
     cout << "buf:\n";
     fwrite(buf, 1, count, stdout);
 #endif
+#ifdef CGI_DEBUG
+    FILE *fs;
+    fs = fopen("/tmp/f", "w");
+    fwrite(buf, 1, count, fs);
+    fclose(fs);
+#endif
 
     //printf("CONTENT_LENGTH str: %s\n", env);
     //printf("CONTENT_LENGTH num: %d\n", read_len);
@@ -108,8 +138,22 @@ int main(int argc, char *argv[])
   for (int i = 0 ; i < idx_vec.size()-1 ; ++i)
   {
     cout << "  substr: " << idx_vec[i] << endl;
+    int count;
+    char *fc = get_file_content(idx_vec[i], count);
+    cout << "    file len: " << count << endl;
+    cout << "    fc: " << fc << endl;
+
     char *fn = get_fn(idx_vec[i]);
     cout << "    fn: " << fn << endl;
+
+    FILE *fs;
+    std::string dir_path("/tmp/");
+    std::string fpath = dir_path + fn;
+    cout << "    fpath: " << fpath << endl;
+
+    fs = fopen(fpath.c_str() , "w");
+    fwrite(fc, 1, count, fs);
+    fclose(fs);
   }
 
 #if 0
