@@ -8,11 +8,33 @@
 
 using namespace std;
 
+char *get_fn(char *content)
+{
+  const char *pattern = "filename=";
+  char *fn = strstr(content, pattern);
+  if (fn)
+  {
+    fn = fn + strlen(pattern) + 1; // filename="t1.txt"
+#ifdef CGI_DEBUG
+    cout << "sizeof(pattern): " << sizeof(pattern) << endl;
+    cout << "strlen(pattern): " << strlen(pattern) << endl;
+    cout << "xxx fn: " << fn << endl;
+#endif
+    char *end = strchr(fn, '\"');
+    if (end)
+      *end = 0;
+    else
+      return 0;
+  }
+  return fn;
+}
+
 //cgi variable: http://www.lyinfo.net.cn/webclass/cgi/cgiclass5-2.htm
 int main(int argc, char *argv[])
 {
   cout << "Content-type: text/plain\n\n";
   cout << "cgi test<br>\n";
+    //return -1;
 
   char *env = getenv("CONTENT_TYPE");
   string bound, mark;
@@ -24,6 +46,10 @@ int main(int argc, char *argv[])
     mark = bound.substr(index+1, bound.size() ); // add 1 for "="
     cout << "mark: " << mark << endl;
   }
+  else
+  {
+    return -1;
+  }
 
   env = getenv("CONTENT_LENGTH");
   int read_len;
@@ -33,8 +59,12 @@ int main(int argc, char *argv[])
     read_len = atoi(env);
     buf = new char[read_len];
     int count = fread(buf, 1, read_len, stdin);
+
+#ifdef CGI_DEBUG
     cout << "buf:\n";
     fwrite(buf, 1, count, stdout);
+#endif
+
     //printf("CONTENT_LENGTH str: %s\n", env);
     //printf("CONTENT_LENGTH num: %d\n", read_len);
   }
@@ -78,6 +108,8 @@ int main(int argc, char *argv[])
   for (int i = 0 ; i < idx_vec.size()-1 ; ++i)
   {
     cout << "  substr: " << idx_vec[i] << endl;
+    char *fn = get_fn(idx_vec[i]);
+    cout << "    fn: " << fn << endl;
   }
 
 #if 0
