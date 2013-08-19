@@ -1,0 +1,22 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!
+ref: http://stackoverflow.com/questions/3448117/
+can-perls-cgi-pm-process-firefoxs-input-type-file-multiple-form-fields
+-->
+<html>
+  <head>
+    <title>Multiple file upload test</title>
+  </head>
+
+  <body>
+    <form action="cgi-bin/cgi1" 
+          method="post" 
+          enctype="multipart/form-data">
+      <input type="file" 
+            name="multiple_files" 
+            multiple="true"/>
+      <button type="submit">Submit</button>
+    </form>
+  </body>
+</html>
