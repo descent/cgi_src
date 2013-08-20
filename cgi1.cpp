@@ -8,6 +8,8 @@
 
 using namespace std;
 
+//#define CGI_SAVE_INPUT
+
 char *get_file_content(char *content, int &len)
 {
   const char pattern[] = {0x0d, 0x0a, 0x0d, 0x0a, 0}; // \r\n\r\n
@@ -88,11 +90,12 @@ int main(int argc, char *argv[])
     cout << "buf:\n";
     fwrite(buf, 1, count, stdout);
 #endif
-#ifdef CGI_DEBUG
+#ifdef CGI_SAVE_INPUT
     FILE *fs;
     fs = fopen("/tmp/f", "w");
     fwrite(buf, 1, count, fs);
     fclose(fs);
+    return 0;
 #endif
 
     //printf("CONTENT_LENGTH str: %s\n", env);
