@@ -2,13 +2,53 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <fstream>
 #include <iostream>
 #include <vector>
 #include <string>
 
 using namespace std;
 
-//#define CGI_SAVE_INPUT
+#define CGI_SAVE_INPUT
+
+string get_file_content(const string &str)
+{
+  string ret_str;
+
+  const char pattern[] = {0x0d, 0x0a, 0x0d, 0x0a, 0}; // \r\n\r\n
+  const char end_pattern[] = {0x0d, 0x0a, 0}; // \r\n
+  string::size_type pos = str.find(pattern);
+  if (pos != string::npos)
+  {
+    pos += strlen(pattern);
+    string::size_type end = str.find(end_pattern, pos);
+    if (end != string::npos)
+    {
+      ret_str = str.substr(pos, end-pos);
+    }
+  }
+  return ret_str;
+}
+
+string get_fn(const string &str)
+{
+  string ret_str;
+
+  const char *pattern = "filename=";
+  string::size_type pos = str.find(pattern);
+  if (pos != string::npos)
+  {
+    pos += strlen(pattern) + 1;
+    string::size_type end = str.find('\"', pos);
+    if (end != string::npos)
+    {
+      ret_str = str.substr(pos, end-pos);
+    }
+  }
+  return ret_str;
+}
+
+
 
 char *get_file_content(char *content, int &len)
 {
@@ -83,8 +123,10 @@ int main(int argc, char *argv[])
   if (env)
   {
     read_len = atoi(env);
+    cout << "read len: " << read_len << endl;
     buf = new char[read_len];
     int count = fread(buf, 1, read_len, stdin);
+
 
 #ifdef CGI_DEBUG
     cout << "buf:\n";
@@ -92,9 +134,11 @@ int main(int argc, char *argv[])
 #endif
 #ifdef CGI_SAVE_INPUT
     FILE *fs;
-    fs = fopen("/tmp/f", "w");
+    const char *sfn = "/tmp/f";
+    fs = fopen(sfn, "w");
     fwrite(buf, 1, count, fs);
     fclose(fs);
+    cout << "save all input to " << sfn;
     return 0;
 #endif
 
@@ -102,87 +146,42 @@ int main(int argc, char *argv[])
     //printf("CONTENT_LENGTH num: %d\n", read_len);
   }
 
-  //printf("buf: %s\n", buf);
+  string str_buf(buf, read_len);
+  delete [] buf;
 
-  //std::string buf_str(buf, read_len);
+  vector<string::size_type> idx_vec;
 
-#if 0
-  mark = "-----------------------------50320045514440238611475056647";
-  //char buf_str[3000]= "-----------------------------50320045514440238611475056647 Content-Type: text/plain 123 -----------------------------50320045514440238611475056647 Content-Type: text/plain zyx -----------------------------50320045514440238611475056647 Content-Type: text/plain 1q2w -----------------------------50320045514440238611475056647--";
-  char buf_str[2000]= "-----------------------------50320045514440238611475056647 Content-Type: text/plain 123 -----------------------------50320045514440238611475056647 Content-Type: text/plain zyx -----------------------------50320045514440238611475056647 Content-Type: text/plain 1q2w -----------------------------50320045514440238611475056647--";
-#endif
-
-  //cout << buf_str << endl;
-
-
-  vector<char *> idx_vec;
   string::size_type pos = 0;
-
-  char *token=0;
-  char *ptr = buf;
-#if 0
-  token = strstr(buf_str, mark.c_str() );
-  if (token != NULL)
-    cout << "token: " << token << endl;
-#endif
-
   while(1)
   {
-    token = strstr(ptr, mark.c_str() );
-    if (token == NULL)
+    pos = str_buf.find(mark, pos);
+    if (pos == string::npos)
       break;
 
-    //cout << "\ttoken: " << token + mark.size() << endl;
-    idx_vec.push_back(token + mark.size());
-    ptr = token + mark.size();
-    *token = 0;
-  }
-
-  for (int i = 0 ; i < idx_vec.size()-1 ; ++i)
-  {
-    cout << "  substr: " << idx_vec[i] << endl;
-    int count;
-    char *fc = get_file_content(idx_vec[i], count);
-    cout << "    file len: " << count << endl;
-    cout << "    fc: " << fc << endl;
-
-    char *fn = get_fn(idx_vec[i]);
-    cout << "    fn: " << fn << endl;
-
-    FILE *fs;
-    std::string dir_path("/tmp/");
-    std::string fpath = dir_path + fn;
-    cout << "    fpath: " << fpath << endl;
-
-    fs = fopen(fpath.c_str() , "w");
-    fwrite(fc, 1, count, fs);
-    fclose(fs);
-  }
-
-#if 0
-  while(1)
-  {
-    pos = buf_str.find(mark, pos);
     pos += mark.size();
-    cout << "pos: " << pos << endl;
-    if (string::npos == pos)
-      break;
     idx_vec.push_back(pos);
   }
-  for (int i=0 ; i < idx_vec.size() ; ++i)
-  {
-    cout << "#" << i << ": " << idx_vec[i];
-  }
-#endif
-#if 0
-  env = getenv("CONTENT_FILE");
-  if (env)
-    printf("env: %s<br>\n", env);
+  //cout << "zz: " << idx_vec.size() << endl;
 
-  env = getenv("REQUEST_METHOD");
-  if (env)
-    printf("env: %s<br>\n", env);
-#endif
-  delete [] buf;
+  vector<string> blocks;
+  for (int i = 0 ; i < idx_vec.size()-1 ; ++i)
+  {
+    cout << "sub len: " << idx_vec[i] << endl;
+    string::size_type len = idx_vec[i+1] - idx_vec[i];
+    blocks.push_back(str_buf.substr(idx_vec[i], len));
+  }
+
+  for (int i = 0 ; i < blocks.size() ; ++i)
+  {
+    string path = "/tmp/";
+    string fn = get_fn(blocks[i]);
+    cout << "fn: " << fn << endl;
+    string fc = get_file_content(blocks[i]);
+    ofstream ofile((path+fn).c_str() );
+    ofile << fc;
+    cout << "fn len: " <<  fc.length() << endl;
+  }
+
+
   return 0;
 }
