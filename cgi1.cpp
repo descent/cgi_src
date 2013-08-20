@@ -11,12 +11,14 @@ using namespace std;
 
 #define CGI_SAVE_INPUT
 
-string get_file_content(const string &str)
+string get_file_content(const string &str, const string &mark)
 {
   string ret_str;
 
   const char pattern[] = {0x0d, 0x0a, 0x0d, 0x0a, 0}; // \r\n\r\n
-  const char end_pattern[] = {0x0d, 0x0a, 0}; // \r\n
+  const char cstr_cr_lf[] = {0x0d, 0x0a, '-', '-'}; // \r\n
+  string cr_lf(cstr_cr_lf, 4); // \r\n
+  string end_pattern = cr_lf + mark;
   string::size_type pos = str.find(pattern);
   if (pos != string::npos)
   {
@@ -111,6 +113,7 @@ int main(int argc, char *argv[])
     string::size_type index = bound.find("=");
     mark = bound.substr(index+1, bound.size() ); // add 1 for "="
     cout << "mark: " << mark << endl;
+    cout << "mark size: " << mark.length() << endl;
   }
   else
   {
@@ -138,8 +141,7 @@ int main(int argc, char *argv[])
     fs = fopen(sfn, "w");
     fwrite(buf, 1, count, fs);
     fclose(fs);
-    cout << "save all input to " << sfn;
-    return 0;
+    cout << "save all input to " << sfn << endl;
 #endif
 
     //printf("CONTENT_LENGTH str: %s\n", env);
@@ -176,7 +178,7 @@ int main(int argc, char *argv[])
     string path = "/tmp/";
     string fn = get_fn(blocks[i]);
     cout << "fn: " << fn << endl;
-    string fc = get_file_content(blocks[i]);
+    string fc = get_file_content(blocks[i], mark);
     ofstream ofile((path+fn).c_str() );
     ofile << fc;
     cout << "fn len: " <<  fc.length() << endl;
