@@ -9,7 +9,7 @@
 
 using namespace std;
 
-#define CGI_SAVE_INPUT
+//#define CGI_SAVE_INPUT
 
 string get_file_content(const string &str, const string &mark)
 {
@@ -62,8 +62,8 @@ char *get_file_content(char *content, int &len)
   {
     fn = fn + strlen(pattern); // text/plain\r\n\r\n
 #ifdef CGI_DEBUG
-    cout << "sizeof(pattern): " << sizeof(pattern) << endl;
-    cout << "strlen(pattern): " << strlen(pattern) << endl;
+    cout << "sizeof(pattern): " << sizeof(pattern) << "<br/>" << endl;
+    cout << "strlen(pattern): " << strlen(pattern) << "<br/>" << endl;
     cout << "xxx fn: " << fn << endl;
 #endif
     char *end = strstr(fn, end_pattern);
@@ -100,7 +100,8 @@ char *get_fn(char *content)
 //cgi variable: http://www.lyinfo.net.cn/webclass/cgi/cgiclass5-2.htm
 int main(int argc, char *argv[])
 {
-  cout << "Content-type: text/plain\n\n";
+  //cout << "Content-type: text/plain\n\n";
+  cout << "Content-type: text/html\n\n";
   cout << "cgi test<br>\n";
     //return -1;
 
@@ -112,8 +113,8 @@ int main(int argc, char *argv[])
     bound = strstr(env, "boundary");
     string::size_type index = bound.find("=");
     mark = bound.substr(index+1, bound.size() ); // add 1 for "="
-    cout << "mark: " << mark << endl;
-    cout << "mark size: " << mark.length() << endl;
+    cout << "mark: " << mark << "<br/>" << endl;
+    cout << "mark size: " << mark.length() << "<br/>" << endl;
   }
   else
   {
@@ -126,7 +127,7 @@ int main(int argc, char *argv[])
   if (env)
   {
     read_len = atoi(env);
-    cout << "read len: " << read_len << endl;
+    cout << "read len: " << read_len << "<br/>\n";
     buf = new char[read_len];
     int count = fread(buf, 1, read_len, stdin);
 
@@ -141,7 +142,7 @@ int main(int argc, char *argv[])
     fs = fopen(sfn, "w");
     fwrite(buf, 1, count, fs);
     fclose(fs);
-    cout << "save all input to " << sfn << endl;
+    cout << "save all input to " << sfn << "<br/>\n";
 #endif
 
     //printf("CONTENT_LENGTH str: %s\n", env);
@@ -168,20 +169,20 @@ int main(int argc, char *argv[])
   vector<string> blocks;
   for (int i = 0 ; i < idx_vec.size()-1 ; ++i)
   {
-    cout << "sub len: " << idx_vec[i] << endl;
+    //cout << "sub len: " << idx_vec[i] << "<br/>" << endl;
     string::size_type len = idx_vec[i+1] - idx_vec[i];
     blocks.push_back(str_buf.substr(idx_vec[i], len));
   }
 
   for (int i = 0 ; i < blocks.size() ; ++i)
   {
-    string path = "/tmp/";
-    string fn = get_fn(blocks[i]);
-    cout << "fn: " << fn << endl;
+    string path = "/home/descent/www/pics/";
     string fc = get_file_content(blocks[i], mark);
+    string fn = get_fn(blocks[i]);
+    cout << "fn: " << fn << " size: " <<  fc.length() << "<br/>" << endl;
     ofstream ofile((path+fn).c_str() );
     ofile << fc;
-    cout << "fn len: " <<  fc.length() << endl;
+    cout << "<a href=\"/~descent/pics/" << fn << "\">" << fn << "</a><br/>\n";
   }
 
 
