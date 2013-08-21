@@ -1,7 +1,15 @@
 CXX=g++
+CXXFLAGS=-g
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $<
+
 cgi1: cgi1.o
 	$(CXX) -g -o $@ $<
-cgi1.o: cgi1.cpp
-	$(CXX) -g -c $<
+
+parse_content: parse_content.o
+	$(CXX) -g -o $@ $<
+
+
 clean:
 	rm -rf *.o cgi1
